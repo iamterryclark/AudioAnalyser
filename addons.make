@@ -1,0 +1,4 @@
+ofxBeat
+ofxGui
+ofxMaxim
+ofxOsc
