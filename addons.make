@@ -1,4 +1,3 @@
-ofxBeat
 ofxGui
 ofxMaxim
 ofxOsc

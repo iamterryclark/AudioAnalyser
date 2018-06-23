@@ -20,10 +20,10 @@ private:
     ofxOscSender sender;
     
     ofxPanel gui;
-    ofParameter<int> nSpectrum;
-    ofParameter<int> nAverages;
-
+    
     ofParameterGroup soundAnalysisParams;
+    vector<ofParameter<float>> thresBand;
+    vector<bool> activateBandTrig;
     
     float * lAudioIn;
     float * rAudioIn;
@@ -47,7 +47,4 @@ public:
     int bufferSize;
     int sampleRate;
     int fftSize;
-    
-    
-    
 };
