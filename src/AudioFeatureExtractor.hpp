@@ -19,10 +19,15 @@ class AudioFeatureExtractor {
 private:
     ofxOscSender sender;
     
-    ofxPanel gui;
+    ofxPanel soundAnalysis, oscVals, oscTrigs;
     
-    ofParameterGroup soundAnalysisParams;
+    ofParameterGroup saParams, oscValParams, oscTrigParams;
+    
     vector<ofParameter<float>> thresBand;
+    vector<ofParameter<bool>> oscSendValue;
+    vector<ofParameter<bool>> oscSendTrigger;
+    
+    vector<float> smoothedOct;
     vector<bool> activateBandTrig;
     
     float * lAudioIn;

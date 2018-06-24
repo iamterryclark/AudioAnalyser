@@ -28,17 +28,36 @@ AudioFeatureExtractor::AudioFeatureExtractor(){
     fftOct.setup(sampleRate, fftSize/2, 1);
     
     //Gui
-    soundAnalysisParams.setName("Audio Analysis Params");
+    saParams.setName("Audio Analysis Params");
+    oscValParams.setName("OSC Send Vals");
+    oscTrigParams.setName("OSC Send Triggers");
     
     for (int i = 0; i < fftOct.nAverages; i++){
-        ofParameter<float> threshParam;
-        thresBand.push_back(threshParam);
         activateBandTrig.push_back(0);
-        soundAnalysisParams.add(thresBand[i].set("Threshold " + ofToString(i), 1, 0, 30));
+        
+        ofParameter<float> floatParam;
+        ofParameter<bool> boolParam1, boolParam2;
+        
+        thresBand.push_back(floatParam);
+        oscSendValue.push_back(boolParam1);
+        oscSendTrigger.push_back(boolParam2);
+        
+        saParams.add(thresBand[i].set("Threshold " + ofToString(i), 1, 0, 30));
+        oscValParams.add(oscSendValue[i].set("Send Band Vals " + ofToString(i), false));
+        oscTrigParams.add(oscSendTrigger[i].set("Send Band Trigger " + ofToString(i), false));
     }
     
-    gui.setup(); // most of the time you don't need a name
-    gui.add(soundAnalysisParams);
+    soundAnalysis.setup();
+    oscVals.setup();
+    oscTrigs.setup();
+    
+    soundAnalysis.setPosition(0, 200);
+    oscVals.setPosition(soundAnalysis.getWidth(), 200);
+    oscTrigs.setPosition(soundAnalysis.getWidth() + oscVals.getWidth(), 200);
+    
+    soundAnalysis.add(saParams);
+    oscVals.add(oscValParams);
+    oscTrigs.add(oscTrigParams);
 }
 
 AudioFeatureExtractor::~AudioFeatureExtractor(){
@@ -46,22 +65,28 @@ AudioFeatureExtractor::~AudioFeatureExtractor(){
 }
 
 void AudioFeatureExtractor::update(){
-    ofxOscMessage m;
-    m.setAddress("/BandOctaves");
+    ofxOscMessage m, m2;
+    m.setAddress("/FFTBandValues");
+    m2.setAddress("/FFTBandTriggers");
     
     for (int i = 0; i < fftOct.nAverages; i++) {
-        m.addFloatArg(fftOct.averages[i]);
-    }
-    
-    sender.sendMessage(m);
-    
-    for (int i = 0; i < fftOct.nAverages; i++){
+        
+        //Triggers
         if (fftOct.averages[i] > thresBand[i]){
             activateBandTrig[i] = true;
         } else {
             activateBandTrig[i] = false;
         }
+        
+        //Values
+        if (oscSendValue[i]) {
+            m.addFloatArg(fftOct.averages[i]);
+            m2.addFloatArg(activateBandTrig[i]);
+        }
     }
+    
+    sender.sendMessage(m);
+    sender.sendMessage(m2);
 }
 
 void AudioFeatureExtractor::draw(){
@@ -72,19 +97,22 @@ void AudioFeatureExtractor::draw(){
     
     //FFT Octaves
     for(int i = 0; i < fftOct.nAverages; i++){
-        float octAvg = ofMap(fftOct.averages[i], 0, 40, 0, 100);
         ofSetColor(255);
-        ofDrawRectangle(50 + (i * 30), 100, 30, -octAvg);
+        ofDrawRectangle(50 + (i * 30), 100, 30, -fftOct.averages[i]);
+        ofDrawBitmapString(i, 60 + (i * 30), 130);
         
         ofSetColor(255,0,0);
         ofDrawLine(50 + (i * 30), 100 - thresBand[i], 80 + (i * 30), 100 - thresBand[i]);
         
         if (activateBandTrig[i]){
-            ofDrawCircle(75 + (i * 30), 150, 10, 10);
+            ofDrawCircle(70 + (i * 30), 160, 10, 10);
         }
     }
     
-    gui.draw();
+    
+    soundAnalysis.draw();
+    oscVals.draw();
+    oscTrigs.draw();
 }
 
 void AudioFeatureExtractor::audioRequested(float * output, int bufferSize, int nChannels){
